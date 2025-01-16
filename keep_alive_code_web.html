@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guia de Implementação: Keep-Alive para PostgreSQL no Supabase</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #031127;
+            color: #f1f1f1; /* Contraste adequado com o fundo */
+        }
+
+        header {
+            background-color: #050A21;
+            color: white;
+            padding: 20px 40px;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap; /* Permite que as imagens se ajustem em dispositivos menores */
+        }
+
+        header img:nth-of-type(1) {
+            width: 120px;
+
+        }
+
+        /* Edita a segunda imagem */
+        header img:nth-of-type(2) {
+            width: 350px;
+            margin: auto 50px auto 50px;
+            
+        }
+
+        header img:nth-of-type(3) {
+            width: 165px;
+            height: auto;
+        }
+
+        h1, h2, h3 {
+            color: #CB922E; /* Melhor contraste para os títulos */
+            padding-left: 20px;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            margin-top: 20px;
+        }
+
+        p, ul {
+            margin-left: 25px;
+            font-size: 1.1em; /* Aumenta o tamanho da fonte para melhorar a legibilidade */
+        }
+
+        .container {
+            width: 80%;
+            margin: 20px auto;
+            background-color: #1d2d44;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        ul {
+            list-style-type: square;
+            padding-left: 50px;
+        }
+
+                /* Estilização do slider */
+        .slider {
+            margin-top: 0 auto;
+            width: 1200px;
+            height: 600px;
+            overflow: hidden;
+        }
+
+        .carousel-images{
+            width: 400%;
+            height: 400px;
+            display: flex;
+        }
+
+        .carousel-images input {
+            display: none;
+        }
+    
+        .slide{
+            width: 25%;
+            position: relative;
+        }
+
+        .slide img{
+            width: 1200px;
+            height: 550px;
+        }
+
+        .manual-navigation{
+            position: absolute;
+            width: 800px;
+            margin-top: 110px;
+            margin-left: 200px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .manual-btn{
+            border: 2px solid #CB922E;
+            padding: 5px;
+            border-radius: 10px;
+            cursor: pointer;
+            transform: 1s;
+        }
+
+        .manual-btn:not(:last-child){
+            margin-right: 25px;
+        }
+
+        .manual-btn:hover{
+            background-color: #cb912ed5;
+        }
+
+        #radio1:checked ~ .first{
+            margin-left: 0;
+        }
+
+        #radio2:checked ~ .first{
+            margin-left: -25%;
+        }
+
+        #radio3:checked ~ .first{
+            margin-left: -50%;
+        }
+
+        #radio4:checked ~ .first{
+            margin-left: -75%;
+        }
+
+        .navigation div{
+            border: 2px solid #CB922E;
+            padding: 5px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 1s;
+        }
+
+        .navigation{
+            position: absolute;
+            width: 800px;
+            margin-top: 510px;
+            margin-left: 200px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .navigation div:not(:last-child){
+            margin-right: 25px;
+        }
+
+        #radio1:checked ~ .navigation .auto-btn1{
+            background-color: #CB922E;  
+        }
+
+        #radio2:checked ~ .navigation .auto-btn2{
+            background-color: #CB922E;  
+        }
+
+        #radio3:checked ~ .navigation .auto-btn3{
+            background-color: #CB922E;  
+        }
+
+        #radio4:checked ~ .navigation .auto-btn4{
+            background-color: #CB922E;  
+        }
+
+       /*Slider 2*/
+        #radio1-2:checked ~ .first {
+        margin-left: 0;
+        }
+
+        #radio2-2:checked ~ .first {
+            margin-left: -25%;
+        }
+
+        #radio3-2:checked ~ .first {
+            margin-left: -50%;
+        }
+
+        #radio4-2:checked ~ .first {
+            margin-left: -75%;
+        }
+
+        #radio1-2:checked ~ .navigation .auto-btn1-2 {
+            background-color: #CB922E;
+        }
+
+        #radio2-2:checked ~ .navigation .auto-btn2-2 {
+            background-color: #CB922E;
+        }
+
+        #radio3-2:checked ~ .navigation .auto-btn3-2 {
+            background-color: #CB922E;
+        }
+
+        #radio4-2:checked ~ .navigation .auto-btn4-2 {
+            background-color: #CB922E;
+        }
+
+        pre {
+            color: azure;
+            background-color: #0F2136;
+            margin-left: 8%;
+            padding: 15px;
+            border: 2px solid #CB922E;
+            border-radius: 10px;
+            overflow-x: auto;
+            width: 80%;
+            position: relative;
+        }
+
+        pre code {
+            padding-left: 15px;
+            display: block;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        button.copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 8px 15px;
+            background-color: #031127;
+            color: white;
+            border: 1px solid #CB922E;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+
+        button.copy-btn:hover {
+            background-color: #CB922E;
+            color: #031127;
+            border: 1px solid #031127;
+        }
+
+        blockquote {
+            background-color: #dddcdc;
+            border-left: 4px solid #CB922E;
+            padding: 10px 20px;
+            margin: 20px ;
+        }
+
+        blockquote, a{
+            color: rgb(15, 15, 15);
+        }
+
+        .codeColor{
+            color: #CB922E;
+            font-size: 17px;
+        }
+
+        .section-divider {
+            margin: 40px 0;
+            border-top: 2px solid #CB922E;
+        }
+
+        .custom-alert {
+            position: fixed;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #031127;
+            border: 2px solid #CB922E;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            display: none;
+            z-index: 9999;
+            font-family: Arial, sans-serif;
+            max-width: 300px;
+            width: 80%;
+            text-align: center;
+        }
+
+        .custom-alert button {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background-color: #041631;
+            border: 1.5px solid #CB922E;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .custom-alert button:hover {
+            background-color: #0F2136;
+        }
+
+        .pAlert {
+            margin: 0px;
+        }
+
+        .logout-btn{
+            background-color: #CB922E;
+            margin-left: 95%;
+            width: 60px;
+            height: 25px;
+            border-radius: 10px;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            background-color: #050A21;
+            color: white;
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                padding: 10px;
+            }
+
+            img {
+                width: 120px;
+            }
+
+            .container {
+                width: 95%;
+            }
+
+            pre {
+                width: 90%;
+            }
+
+        button.logout-btn {
+            background-color: #031127;
+            color: white;
+            padding: 10px 20px;
+            border: 1px solid #CB922E;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.1em;
+            margin-top: 20px;
+        }
+
+        button.logout-btn:hover {
+            background-color: #CB922E;
+            color: #031127;
+            border: 1px solid #031127;
+        }
+     }
+
+    </style>
+</head>
+<body>
+
+<header>
+    <img src="https://pzgicdhkpdygrwkipkqq.supabase.co/storage/v1/object/public/saindo_do_zero/logos/nb_academy_branco.png" alt="NoBotsAcademy">
+    <img src="https://pzgicdhkpdygrwkipkqq.supabase.co/storage/v1/object/public/saindo_do_zero/logos/saindo_do_zero_2.png" alt="no cold e low code">
+    <img src="https://pzgicdhkpdygrwkipkqq.supabase.co/storage/v1/object/public/saindo_do_zero/logos/NoBots_logo_LIGHT-GOLD_(Buff).png" alt="NoBots">
+</header>
+
+<div class="container">
+    <h1>Guia de Implementação: Keep-Alive para PostgreSQL no Supabase</h1>
+    <h2>Introdução</h2>
+    <p>O Supabase adota uma política de suspensão de projetos inativos para otimizar recursos. No entanto, essa funcionalidade pode resultar em:</p>
+    <ul>
+        <li><strong>Interrupções inesperadas no serviço</strong>: Afetando aplicações críticas.</li>
+        <li><strong>Atrasos no primeiro acesso após a pausa</strong>: Impactando a experiência do usuário.</li>
+        <li><strong>Problemas em aplicações com conexão constante</strong>: Serviços que exigem alta disponibilidade podem falhar.</li>
+    </ul>
+    <p>Este guia apresenta uma solução simples e eficiente para manter o banco de dados ativo, garantindo um serviço responsivo e contínuo.</p>
+
+    <div class="section-divider"></div>
+
+    <h2>A Solução Keep-Alive</h2>
+    <p>A solução utiliza um mecanismo baseado em:</p>
+    <ul>
+        <li><strong>Tabela de controle</strong>: Para registrar atividades.</li>
+        <li><strong>Função PL/pgSQL</strong>: Que atualiza o registro periodicamente.</li>
+        <li><strong>Agendamento automático com pg_cron</strong>: Para garantir execuções regulares.</li>
+        <li><strong>Impacto mínimo</strong>: Preserva o desempenho e a eficiência do banco.</li>
+        <li><strong>Monitoramento prático</strong>: Com verificações simples da última execução.</li>
+    </ul>
+
+    <h3>Benefícios</h3>
+    <ul>
+        <li>Previne a suspensão do banco.</li>
+        <li>Mantém o banco responsivo.</li>
+        <li>Baixo impacto em recursos.</li>
+        <li>Fácil de implementar e gerenciar.</li>
+    </ul>
+
+    <div class="section-divider"></div>
+
+    <h2>Pré-requisitos</h2>
+
+    <!-- Carrossel de imagens -->
+    <div class="slider">
+
+        <div class="carousel-images">
+
+            <!--Radio Buttons -->
+            <input type="radio" name="radio-btn" id="radio1">
+            <input type="radio" name="radio-btn" id="radio2">
+            <input type="radio" name="radio-btn" id="radio3">
+            <input type="radio" name="radio-btn" id="radio4">
+
+            <!--Carrossel de imagens-->
+            <div class="slide first">
+                <img src="https://pzgicdhkpdygrwkipkqq.supabase.co/storage/v1/object/public/saindo_do_zero/screenshot/Pre_requisitos/pre-requisito_01.png" alt="Imagem 1" <p>1. Abrir SQL Editor: No menu lateral clique no Botão SQL Editor</p> >   
+            </div>
+            <div class="slide">
+                <img src="https://pzgicdhkpdygrwkipkqq.supabase.co/storage/v1/object/public/saindo_do_zero/screenshot/Pre_requisitos/pre-requisito_02.png" alt="Imagem 2" <p>2. Criar uma nova pasta chamada keep_alive. Clique no '+' em seguida em 'Create a new folder'</p>>
+                
+            </div>
+            <div class="slide">
+                <img src="https://pzgicdhkpdygrwkipkqq.supabase.co/storage/v1/object/public/saindo_do_zero/screenshot/Pre_requisitos/pre-requisito_03.png" alt="Imagem 3" <p>2.2 Coloque o nome da pasta de keep_alive</p>>
+                
+            </div>
+            <div class="slide">
+                <img src="https://pzgicdhkpdygrwkipkqq.supabase.co/storage/v1/object/public/saindo_do_zero/screenshot/Pre_requisitos/pre-requisito_04.png" alt="Imagem 4" <p>3. Criar um 'snippet' (Nova linha de comando): Clique com o Botão Direito na pasta 'keep_alive', clique em '+ Create new snippet'</p> >
+                
+            </div>
+
+            <!--Navigation-->
+            <div class="navigation">
+                <div class="auto-btn1"></div>
+                <div class="auto-btn2"></div>
+                <div class="auto-btn3"></div>
+                <div class="auto-btn4"></div>
+            </div>
+
+        </div>
+
+        <div class="manual-navigation">
+            <label for="radio1" class="manual-btn"></label>
+            <label for="radio2" class="manual-btn"></label>
+            <label for="radio3" class="manual-btn"></label>
+            <label for="radio4" class="manual-btn"></label>
+        </div>
+        
+    </div>
+
+    <div class="section-divider"></div>
+
+    <div class="secao1">
+        <h2>1. Criar Função PG Cron</h2>
+
+        <p>Certo de que a extensão <strong>pg_cron</strong> está disponível e instalada:</p>
+        <pre><code id="sql-create-extension">
+        CREATE EXTENSION IF NOT EXISTS pg_cron;
+        </code>
+        <button class="copy-btn" onclick="copyCode('sql-create-extension')">Copiar</button></pre>
+        <blockquote>
+            <p><strong>Nota:</strong> Este comando instala a extensão necessária para agendar tarefas automatizadas. Caso já esteja instalada, o comando não fará alterações devido ao <code class="codeColor">IF NOT EXISTS</code>.</p>
+        </blockquote>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <div class="secao2">
+        <h2>2. Criar Tabela de Controle</h2>
+        <p>Crie uma tabela para gerenciar os registros do Keep-Alive:</p>
+        <pre><code id="sql-create-table">
+        CREATE TABLE IF NOT EXISTS public.keep_alive_control (
+        id INTEGER PRIMARY KEY DEFAULT 1,
+        last_ping TIMESTAMP WITH TIME ZONE,
+        CHECK (id = 1)
+        );
+    
+        </code>
+        <button class="copy-btn" onclick="copyCode('sql-create-table')">Copiar</button></pre>
+        
+        <p><strong>Inserir Registro Inicial</strong></p>
+        <p>Insira o registro inicial na tabela para evitar que ela permaneça vazia:</p>
+        <pre><code id="sql-create-table">
+            -- Inserir registro inicial
+            INSERT INTO public.keep_alive_control (last_ping)
+            VALUES (NOW())
+            ON CONFLICT (id) DO NOTHING;
+            </code>
+            <button class="copy-btn" onclick="copyCode('sql-create-table')">Copiar</button></pre>
+    
+        <blockquote>
+            <p><strong>Explicação:</strong></p>
+            <ul>
+                <li><strong>Controle único</strong>: O <code class="codeColor">CHECK (id = 1)</code> garante que haverá apenas uma linha.</li>
+                <li><strong>Registro inicial</strong>: O timestamp é criado com <code class="codeColor">NOW()</code>.</li>
+                <li><strong>Evitar erros</strong>: O <code class="codeColor">ON CONFLICT</code> impede duplicação de registros.</li>
+            </ul>
+        </blockquote>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <div class="secao3">
+        <h2>3. Criar Função Keep-Alive</h2>
+        <p>Implemente a função que manterá o banco ativo:</p>
+        <pre><code id="sql-create-function">
+        DROP FUNCTION IF EXISTS keep_alive();
+    
+        CREATE OR REPLACE FUNCTION keep_alive()
+        RETURNS void AS $$
+        BEGIN
+            UPDATE public.keep_alive_control 
+            SET last_ping = NOW() 
+            WHERE id = 1;
+        END;
+        $$ LANGUAGE plpgsql;
+        </code>
+        <button class="copy-btn" onclick="copyCode('sql-create-function')">Copiar</button></pre>
+        <blockquote>
+            <p><strong>Explicação:</strong></p>
+            <ul>
+                <li><strong>Substituição segura</strong>: Remove funções existentes antes de recriá-las.</li>
+                <li><strong>Atualização eficiente</strong>: Apenas uma linha é alterada na tabela.</li>
+                <li><strong>Função void</strong>: Não retorna valores.</li>
+            </ul>
+        </blockquote>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <div class="secao4">
+        <h2>4. Agendar a Execução</h2>
+        <p>Automatize o processo usando <code class="codeColor">pg_cron</code>:</p>
+        <pre><code id="sql-schedule">
+        DO $$ 
+        BEGIN
+        -- Remover agendamento existente
+        PERFORM 1 FROM cron.job WHERE jobname = 'keep-alive';
+        IF FOUND THEN
+            PERFORM cron.unschedule('keep-alive');
+        END IF;
+        -- Criar novo agendamento
+        PERFORM cron.schedule('keep-alive', '0 * * * *', 'SELECT keep_alive()');
+        END;
+        $$;
+        </code>
+        <button class="copy-btn" onclick="copyCode('sql-schedule')">Copiar</button></pre>
+        <blockquote>
+            <p><strong>Explicação:</strong></p>
+            <ul>
+                <li><strong>Remoção de duplicatas</strong>: Evita conflitos em agendamentos anteriores.</li>
+                <li><strong>Periodicidade</strong>: Executa a função a cada minuto (<code class="codeColor">* * * * *</code>).</li>
+                <li>Para executar a <strong>Periodicidade</strong> a cada hora coloque (<code class="codeColor">'0 * * * *'</code>) no comando.</li>
+            </ul>
+        </blockquote>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <div class="secao5">
+        <h2>5. Verificação</h2>
+    <p>Garanta que tudo está funcionando como esperado:</p>
+    <pre><code id="sql-check">
+    -- Verificar última execução
+    SELECT * FROM public.keep_alive_control;
+
+    -- Verificar jobs agendados
+    SELECT * FROM cron.job;
+    </code>
+    <button class="copy-btn" onclick="copyCode('sql-check')">Copiar</button></pre>
+    </div>
+
+    <div class="section-divider"></div>
+    
+    <div class="secao6">
+        <h2>6. Boas Práticas</h2>
+        <p>Para uma boa organização e visualização, renomeie suas funções e faça a documentação no campo descrição.</p>
+        <p>1. Renomear função</p>
+    
+        <!-- Novo Slider para Boas Práticas -->
+        <div class="slider">
+    
+            <div class="carousel-images">
+    
+                <!--Radio Buttons -->
+                <input type="radio" name="radio-btn-2" id="radio1-2">
+                <input type="radio" name="radio-btn-2" id="radio2-2">
+                <input type="radio" name="radio-btn-2" id="radio3-2">
+    
+                <!--Carrossel de imagens-->
+                <div class="slide first">
+                    <img src="https://pzgicdhkpdygrwkipkqq.supabase.co/storage/v1/object/public/saindo_do_zero/screenshot/Boas_praticas/renomear_query_01.png" alt="Imagem 1" <p>2.1 Clique com o Botão Direito na função criada, e depois clique em 'Rename query'</p>>
+                    
+                </div>
+                <div class="slide">
+                    <img src="https://pzgicdhkpdygrwkipkqq.supabase.co/storage/v1/object/public/saindo_do_zero/screenshot/Boas_praticas/renomear_query_02.png" alt="Imagem 2" <p>2.2 Coloque o nome da etapa (função) que está criando, por exemplo Etapa 1. Criar Função PG Cron no campo 'Name'.</p>>
+                    
+                </div>
+                <div class="slide">
+                    <img src="https://pzgicdhkpdygrwkipkqq.supabase.co/storage/v1/object/public/saindo_do_zero/screenshot/Boas_praticas/renomear_query_03.png" alt="Imagem 3" <p>3. Documentação: No campo 'Description' descreva o que a função irá fazer, uma dica é copiar a Explicação que está do código.</p>>
+                    
+                </div>
+    
+                <!--Navigation-->
+                <div class="navigation">
+                    <div class="auto-btn1-2"></div>
+                    <div class="auto-btn2-2"></div>
+                    <div class="auto-btn3-2"></div>
+                </div>
+    
+            </div>
+    
+            <div class="manual-navigation">
+                <label for="radio1-2" class="manual-btn"></label>
+                <label for="radio2-2" class="manual-btn"></label>
+                <label for="radio3-2" class="manual-btn"></label>
+            </div>
+    
+        </div>
+    </div>
+    
+    <div class="section-divider"></div>
+
+    <div class="secao7">
+        <h2>7. Solução de Problemas Comuns</h2>
+    <h3>Erro: "extension not available"</h3>
+    <ul>
+        <li>Verifique permissões para criar extensões.</li>
+        <li>Contate o suporte do Supabase para ativação.</li>
+    </ul>
+
+    <h3>Erro de função duplicada</h3>
+    <ul>
+        <li>Execute <code class="codeColor">DROP FUNCTION</code> antes de criar uma nova versão.</li>
+        <li>Confirme que não há objetos dependentes.</li>
+    </ul>
+
+    <h3>Erro no agendamento</h3>
+    <ul>
+        <li>Verifique se o <strong>pg_cron</strong> está habilitado e configurado corretamente.</li>
+        <li>Confirme a sintaxe do cronograma (<code class="codeColor">cron.schedule</code>).</li>
+    </ul>
+    </div>
+    
+
+        <!-- Botão de logout -->
+        <button class="logout-btn" onclick="logout()">Sair</button>
+</div>
+
+<div class="footer">
+    <p>&copy; 2025 Guia de Implementação | Desenvolvido por NoBots Academy | Todos os direitos reservados.</p>
+    <p>Se tiver dúvidas, entre em contato através do <a href="mailto:academy@nobots.com.br" style="color: #CB922E;">academy@nobots.com.br</a>.</p>
+</div>
+
+<div class="custom-alert" id="alertBox">
+    <p class="pAlert">Código copiado!</p>
+    <button onclick="closeAlert()">OK</button>
+</div>
+
+
+<!--Códigos JS-->
+<script>
+    function copyCode(id) {
+        var copyText = document.getElementById(id);
+        var range = document.createRange();
+        range.selectNode(copyText);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+        document.execCommand("copy");
+        window.getSelection().removeAllRanges();
+        showAlert();
+    }
+
+    function showAlert() {
+        document.getElementById("alertBox").style.display = "block";
+    }
+
+    function closeAlert() {
+        document.getElementById("alertBox").style.display = "none";
+    }
+</script>
+
+<script>
+    // Verificando se o usuário está logado
+    if (localStorage.getItem('loggedIn') !== 'true') {
+        // Se não estiver logado, redireciona para a página de login
+        window.location.href = 'index.html'; // Nome do arquivo de login 
+    }
+
+    // Função de logout
+    function logout() {
+    // Remove o item 'loggedIn' do localStorage
+    localStorage.removeItem('loggedIn');
+        
+    // Redireciona para a página de login
+    window.location.href = 'index.html'; // Nome do arquivo de login
+    }
+</script>
+
+</body>
+</html>
